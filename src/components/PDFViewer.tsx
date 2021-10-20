@@ -11,43 +11,55 @@ const PDFViewer: React.FC<InputProps> = ({ mendixProps }) => {
     const [annotationManager, setAnnotationManager] = useState<null | CoreControls.AnnotationManager>(null);
     const [docViewer, setDocViewer] = useState<null | CoreControls.DocumentViewer>(null);
 
-useEffect(() => {        
+useEffect(() => {    
+        console.log('Hello Christoph!');    
         viewer({                
             path: "/resources/lib",            
         }, viewerRef.current as HTMLDivElement).then(instance => {
             const { docViewer } = instance; 
             setInstance(instance);
             setDocViewer(docViewer);
+            // const annMan = docViewer.getAnnotationManager();
             setAnnotationManager(docViewer.getAnnotationManager());
 
-            // docViewer.on('documentLoaded', () => {
-            //     console.log(annotationManager ? 'NOT EMPTY' : 'EMPTY')
-            //     if (annotationManager) {
-            //         console.log(annotationManager ? 'NOT EMPTY' : 'EMPTY')
-            //         annotationManager.importAnnotations(mendixProps.annotationAttribute.value);
-            //     }
-
-
-            // });
+            docViewer.on('documentLoaded', () => {
+                console.log(annotationManager ? 'NOT EMPTY' : 'EMPTY')
+                if (annotationManager) {
+                    console.log(annotationManager ? 'NOT EMPTY' : 'EMPTY')
+                    annotationManager.importAnnotations(mendixProps.annotationAttribute.value);
+                }
+            });
             
         });    
     }, []);
     
     // load document coming from the URL attribute 
     useEffect(() => {
-
-            if(instance && mendixProps.urlAttribute.value !== '') {
-                instance.loadDocument(mendixProps.urlAttribute.value);
-            } 
-
-            console.log(annotationManager ? 'NOT EMPTY' : 'EMPTY');
-            if (docViewer && annotationManager) {
-                docViewer.on('documentLoaded', () => {
-                    annotationManager.importAnnotations(mendixProps.annotationAttribute.value)
-                });
+        console.log('Hello second useEffect');
+            if (mendixProps.urlAttribute.status !== 'unavailable') {
+                if(instance && mendixProps.urlAttribute.value !== '') {
+                    instance.loadDocument(mendixProps.urlAttribute.value);
+                    //sme change
+                } 
+    
+                // if(instance && mendixProps.annotationAttribute.value !== '') {
+                //     instance.loadDocument(mendixProps.urlAttribute.value);
+                // } 
+    
+                if (docViewer && annotationManager) {
+                    docViewer.on('documentLoaded', () => {
+                        console.log(mendixProps.annotationAttribute);
+                        if (mendixProps.annotationAttribute.status !== 'unavailable') {
+                            annotationManager.importAnnotations(mendixProps.annotationAttribute.value);
+                            const test = annotationManager.canModifyContents(mendixProps.annotationAttribute.value);
+                            console.log(test);
+                            const user = annotationManager.getCurrentUser();
+                            console.log(user)
+                        }
+                    });
+                }
             }
-
-    }, [instance, mendixProps.urlAttribute]);
+    }, [instance, mendixProps.annotationAttribute.value]);
 
     // save annotation data to the annotation attribute
     useEffect(() => {
@@ -58,11 +70,11 @@ useEffect(() => {
         }
 
         const updateAnnotation = async () => {
-            console.log(annotationManager ? 'Is not empty' : 'is fucking empy');
+            console.log(annotationManager ? 'Is not empty' : 'is empy');
             if (annotationManager) {
                 const xfdf = await annotationManager.exportAnnotations({ links: false, widgets: false });
                 mendixProps.annotationAttribute.setValue(xfdf);
-                callNanoflow()
+                callNanoflow();
             }
         }
 
